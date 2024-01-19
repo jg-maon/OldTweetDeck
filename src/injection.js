@@ -18,7 +18,7 @@
             remote_bundle_css_req,
             remote_twitter_text_req,
         ] = await Promise.allSettled([
-            fetch("https://raw.githubusercontent.com/jg-maon/OldTweetDeck/main/src/injection.js"),
+            fetch("https://raw.githubusercontent.com/jg-maon/OldTweetDeck/main/src/interception.js"),
             fetch("https://raw.githubusercontent.com/jg-maon/OldTweetDeck/main/files/vendor.js"),
             fetch("https://raw.githubusercontent.com/jg-maon/OldTweetDeck/main/files/bundle.js"),
             fetch("https://raw.githubusercontent.com/jg-maon/OldTweetDeck/main/files/bundle.css"),
