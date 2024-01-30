@@ -82,7 +82,18 @@ async function showNotifications() {
         if(notif.maxVersion && !maxVersionCheck(currentVersion, notif.maxVersion)) continue;
         if(notif.minVersion && !minVersionCheck(currentVersion, notif.minVersion)) continue;
         if(document.querySelector('.otd-notification-modal')) continue;
-        let notifHTML = `<div class="otd-notification otd-notification-${notif.type}"><div class="otd-notification-content">${notif.text}</div></div>`;
+        let notifHTML = `<div class="otd-notification otd-notification-${notif.type}"><div class="otd-notification-content">${notif.text.replace(
+            /[&'`"<>]/g, 
+            function(match) {
+              return {
+                '&': '&amp;',
+                "'": '&#x27;',
+                '`': '&#x60;',
+                '"': '&quot;',
+                '<': '&lt;',
+                '>': '&gt;',
+              }[match]
+            })}</div></div>`;
         let shown = Date.now();
         createModal(notifHTML, 'otd-notification-modal', () => {
             if(!notif.dismissable) return;
