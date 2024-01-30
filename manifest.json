@@ -1,7 +1,7 @@
 {
   "name": "OldTweetDeck",
   "description": "Returns old TweetDeck, cloned by jg-maon",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "manifest_version": 2,
   "homepage_url": "https://github.com/jg-maon/OldTweetDeck",
   "permissions": [
@@ -18,11 +18,7 @@
   "background": {
     "scripts": ["src/background.js"]
   },
-  "web_accessible_resources": [
-    "images/*",
-    "files/*",
-    "src/*"
-  ],
+  "web_accessible_resources": ["images/*", "files/*", "src/*"],
   "icons": {
     "16": "/images/logo16.png",
     "32": "/images/logo32.png",
