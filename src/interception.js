@@ -5,6 +5,31 @@ const PUBLIC_TOKENS = [
 const NEW_API = "https://twitter.com/i/api/graphql";
 const cursors = {};
 
+const generateID = () => {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
+let verifiedUser = localStorage.OTDverifiedUser ? JSON.parse(localStorage.OTDverifiedUser) : null;
+let feeds = localStorage.OTDfeeds ? JSON.parse(localStorage.OTDfeeds) : {};
+let columns = localStorage.OTDcolumns ? JSON.parse(localStorage.OTDcolumns) : {};
+let settings = localStorage.OTDsettings ? JSON.parse(localStorage.OTDsettings) : null;
+
+function cleanUp() {
+    let ids = localStorage.OTDcolumnIds ? JSON.parse(localStorage.OTDcolumnIds) : [];
+    for(let columnId in columns) {
+        if(!ids.includes(columnId)) {
+            delete columns[columnId];
+        }
+    }
+    localStorage.OTDcolumns = JSON.stringify(columns);
+    for(let id in feeds) {
+        if(!localStorage.OTDcolumns.includes(id)) {
+            delete feeds[id];
+        }
+    }
+    localStorage.OTDfeeds = JSON.stringify(feeds);
+}
+
 function getFollows(cursor = -1, count = 5000) {
 	return new Promise(function (resolve, reject) {
 		var xhr = new XMLHttpRequest();
@@ -31,11 +56,12 @@ function getFollows(cursor = -1, count = 5000) {
 	});
 }
 
-let follows = JSON.parse(localStorage.OTDfollows || "[]");
+let followsData = JSON.parse(localStorage.OTDfollowsData || "{}");
 
 function updateFollows() {
-    let lastUpdate = localStorage.OTDlastFollowsUpdate;
-    if(lastUpdate && Date.now() - +lastUpdate < 1000 * 60 * 60 * 12) return;
+    let id = getCurrentUserId() ?? localStorage.twitterAccountID;
+    if(followsData[id] && followsData[id].lastUpdate && Date.now() - +followsData[id].lastUpdate < 1000 * 60 * 60 * 6) return;
+    if(!followsData[id]) followsData[id] = {};
     let newfollows = [];
     let cursor = -1;
     let count = 5000;
@@ -44,9 +70,9 @@ function updateFollows() {
         let res = await getFollows(cursor, count);
         newfollows = newfollows.concat(res.ids);
         if(res.next_cursor_str === "0" || i++ > 10) {
-            localStorage.OTDfollows = JSON.stringify(follows);
-            follows = newfollows;
-            localStorage.OTDlastFollowsUpdate = Date.now();
+            followsData[id].lastUpdate = Date.now();
+            followsData[id].data = newfollows;
+            localStorage.OTDfollowsData = JSON.stringify(followsData);
             return;
         }
         cursor = res.next_cursor_str;
@@ -56,7 +82,7 @@ function updateFollows() {
     get();
 }
 
-updateFollows();
+setTimeout(updateFollows, 1000);
 setInterval(updateFollows, 1000 * 60);
 
 function parseNoteTweet(result) {
@@ -109,6 +135,7 @@ function parseTweet(res) {
         }
         if (
             result.quoted_status_result &&
+            result.quoted_status_result.result &&
             result.quoted_status_result.result.legacy &&
             result.quoted_status_result.result.core &&
             result.quoted_status_result.result.core.user_results.result.legacy
@@ -161,7 +188,7 @@ function parseTweet(res) {
         tweet.entities = note.entities;
         tweet.display_text_range = undefined; // no text range for long tweets
     }
-    if (tweet.quoted_status_result) {
+    if (tweet.quoted_status_result && tweet.quoted_status_result.result) {
         let result = tweet.quoted_status_result.result;
         if (!result.core && result.tweet) result = result.tweet;
         if (result.limitedActionResults) {
@@ -230,7 +257,7 @@ function getCurrentUserId() {
     let accounts = TD.storage.accountController.getAll();
     let screen_name = TD.storage.accountController.getUserIdentifier();
     let account = accounts.find((account) => account.state.username === screen_name);
-    return account.state.userId;
+    return account?.state?.userId ?? verifiedUser?.id_str ?? localStorage.twitterAccountID;
 }
 
 function generateParams(features, variables, fieldToggles) {
@@ -323,11 +350,14 @@ const proxyRoutes = [
             } 
 
             let currentUserId = getCurrentUserId();
+            let follows = followsData[currentUserId];
+            if(follows) follows = follows.data;
+            else follows = [];
             let filtered = data.filter(t => 
                 !t.in_reply_to_user_id_str || // not a reply
                 t.user.id_str === currentUserId || // my tweet
                 (
-                    // reply to someone i follow
+                    // reply to someone i follow from someone i follow
                     follows.includes(t.in_reply_to_user_id_str) && 
                     t.user.following
                 ) ||
@@ -338,8 +368,7 @@ const proxyRoutes = [
                 )
             );
 
-            if(filtered.length === 0) return data;
-            else return filtered;
+            return filtered;
         }
         // responseHeaderOverride: {
         //     // slow it down a bit
@@ -1482,19 +1511,156 @@ const proxyRoutes = [
     {
         path: "/1.1/tweetdeck/clients/blackbird/all",
         method: "GET",
-        afterRequest: (xhr) => {
-            // Save state to localstorage in case twitter shuts this api down so I can restore it for users later
-            if (xhr.status === 200 && xhr.responseText.length > 100) {
-                try {
-                    JSON.parse(xhr.responseText);
-                    localStorage.setItem("OTD_tweetdeck_state", xhr.responseText);
-                } catch (e) {
-                    console.error(e);
-                }
-            }
-
-            return xhr.responseText;
+        beforeRequest: (xhr) => {
+            xhr.modUrl = `https://api.twitter.com/1.1/help/settings.json?meow`;
         },
+        afterRequest: (xhr) => {
+            const state = {
+                client: {
+                    columns: localStorage.OTDcolumnIds ? JSON.parse(localStorage.OTDcolumnIds) : [],
+                    mtime: new Date().toISOString(),
+                    name: "blackbird",
+                    settings: settings ?? {
+                        account_whitelist: [`twitter:${verifiedUser.id_str}`],
+                        default_account: `twitter:${verifiedUser.id_str}`,
+                        recent_searches: [],
+                        display_sensitive_media: false,
+                        name_cache: {
+                            customTimelines: {},
+                            lists: {},
+                            users: {}
+                        },
+                        navbar_width: "full-size",
+                        previous_splash_version: "4.0.220811153004",
+                        show_search_filter_callout: false,
+                        show_trends_filter_callout: false,
+                        theme: "light",
+                        use_narrow_columns: null,
+                        version: 2
+                    },
+                },
+                columns: columns ?? {},
+                decider: {},
+                feeds: feeds ?? {},
+                messages: [],
+                new: true
+            };
+            if(!settings) {
+                settings = state.client.settings;
+                localStorage.OTDsettings = JSON.stringify(settings);
+            }
+            cleanUp();
+            console.log('state', state);
+
+            return state;
+        },
+    },
+    // emulate sending state data
+    {
+        path: "/1.1/tweetdeck/clients/blackbird",
+        method: "POST",
+        responseHeaderOverride: {
+            "x-td-mtime": () => {
+                return new Date().toISOString();
+            },
+        },
+        beforeRequest: (xhr) => {
+            xhr.modUrl = `https://api.twitter.com/1.1/help/settings.json?meow_push`;
+            xhr.modMethod = "GET";
+        },
+        beforeSendBody: (xhr, body) => {
+            let json = JSON.parse(body);
+            console.log('state push', json);
+            if(json.columns) {
+                localStorage.OTDcolumnIds = JSON.stringify(json.columns);
+            }
+            if(json.settings && settings) {
+                for(let key in json.settings) {
+                    settings[key] = json.settings[key];
+                }
+                localStorage.OTDsettings = JSON.stringify(settings);
+            }
+            cleanUp();
+            return body;
+        },
+        afterRequest: (xhr) => {
+            return "";
+        }
+    },
+    // emulate sending feeds
+    {
+        path: "/1.1/tweetdeck/feeds",
+        method: "POST",
+        responseHeaderOverride: {
+            "X-Td-Mtime": () => {
+                return new Date().toISOString();
+            },
+        },
+        beforeRequest: (xhr) => {
+            xhr.modUrl = `https://api.twitter.com/1.1/help/settings.json?meow_feeds_push`;
+            xhr.modMethod = "GET";
+        },
+        beforeSendBody: (xhr, body) => {
+            let json = JSON.parse(body);
+            let ids = [];
+            for(let i = 0; i < json.length; i++) {
+                const id = generateID();
+                ids.push(id);
+                feeds[id] = json[i];
+            }
+            xhr.storage.ids = ids;
+            localStorage.OTDfeeds = JSON.stringify(feeds);
+            console.log('feeds push', json, ids);
+            return body;
+        },
+        afterRequest: (xhr) => {
+            return xhr.storage.ids;
+        }
+    },
+    // emulate sending columns
+    {
+        path: "/1.1/tweetdeck/columns",
+        method: "POST",
+        responseHeaderOverride: {
+            "X-Td-Mtime": () => {
+                return new Date().toISOString();
+            },
+        },
+        beforeRequest: (xhr) => {
+            xhr.modUrl = `https://api.twitter.com/1.1/help/settings.json?meow_columns_push`;
+            xhr.modMethod = "GET";
+        },
+        beforeSendBody: (xhr, body) => {
+            let json = JSON.parse(body);
+            let ids = [];
+            for(let i = 0; i < json.length; i++) {
+                const id = json[i].id ?? generateID();
+                ids.push(id);
+                columns[id] = json[i];
+            }
+            xhr.storage.ids = ids;
+            localStorage.OTDcolumns = JSON.stringify(columns);
+            console.log('columns push', json, ids);
+            return body;
+        },
+        afterRequest: (xhr) => {
+            return xhr.storage.ids;
+        }
+    },
+    // getting user
+    {
+        path: "/1.1/account/verify_credentials.json",
+        method: "GET",
+        afterRequest: (xhr) => {
+            try {
+                let data = JSON.parse(xhr.responseText);
+                verifiedUser = data;
+                localStorage.OTDverifiedUser = JSON.stringify(data);
+            } catch (e) {
+                console.error(e);
+            }
+            return xhr.responseText;
+        }
     },
 ];
 
@@ -1525,7 +1691,7 @@ XMLHttpRequest = function () {
                 this.proxyRoute.beforeRequest(this);
             }
 
-            this.open(method, this.modUrl, async, username, password);
+            this.open(this.modMethod, this.modUrl, async, username, password);
         },
         setRequestHeader(name, value) {
             this.modReqHeaders[name] = value;
@@ -1583,18 +1749,10 @@ XMLHttpRequest = function () {
                     let headerValue = splitHeader[1];
                     objHeaders[headerName.toLowerCase()] = headerValue;
                 }
-                for (let i in splitHeaders) {
-                    let header = splitHeaders[i];
-                    let splitHeader = header.split(": ");
-                    let headerName = splitHeader[0];
-                    let headerValue = splitHeader[1];
-                    if (this.proxyRoute.responseHeaderOverride[headerName.toLowerCase()]) {
-                        splitHeaders[i] = `${headerName}: ${this.proxyRoute.responseHeaderOverride[
-                            headerName.toLowerCase()
-                        ](headerValue, objHeaders)}`;
-                    }
+                for(let header in this.proxyRoute.responseHeaderOverride) {
+                    objHeaders[header.toLowerCase()] = this.proxyRoute.responseHeaderOverride[header]();
                 }
-                headers = splitHeaders.join("\r\n");
+                headers = Object.entries(objHeaders).map(([name, value]) => `${name}: ${value}`).join("\r\n");
             }
 
             return headers;

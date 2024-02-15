@@ -74,6 +74,29 @@ TweetDeckのファイルが更新された場合は、タブを再読み込み�
 API制限に達しているため読み込めていません。しばらくしてAPI制限が解除されるとまた表示されます。  
 
 ## 更新履歴
+
+### 3.3.1
+* フィルターを変更するとカラムが消える問題を修正
+
+### 3.3.0
+* OldTweetdeckが読み込まれない問題を修正
+  * Twitterがカラムの位置と全体の状態を保存するAPIを削除したため、それらのAPIを再現しブラウザ内に状態を保存するようにしました
+* **TweetDeckの状態がリセットされるため、更新前でTweetDeckを表示できている場合は検索クエリやカラムの配置をメモしておくことをおすすめします！**
+
+**この拡張機能の開発を続けるために[寄付](https://dimden.dev/donate/)をご検討ください**
+
+<details>
+<summary>過去の更新履歴</summary>
+
+### 3.2.3
+* 複数アカウントでのリプライのフィルタリングに関する不具合を修正
+* 日本語でツイートの展開が動作しない問題を修正
+
+### 3.2.2
+* フォローしていないアカウントへのリプライがホームタイムラインで表示される問題を修正
+   * この挙動が気に入った人向けにオプションで切り替え可能にしました  
+![](https://github.com/dimdenGD/OldTweetDeck/assets/26517362/7e4321aa-9320-4e83-92e3-a8b6d29a8109)
+
 ### 3.2.1
 * いいねを読み込めるように修正
 * いいねが動作するように修正
@@ -84,11 +107,6 @@ API制限に達しているため読み込めていません。しばらくし�
 * ホームタイムラインを読み込めるように修正
 * リストを読み込めるように修正
 * 通知が動作するように修正
-
-**この拡張機能の開発を続けるために[寄付](https://dimden.dev/donate/)をご検討ください**
-
-<details>
-<summary>過去の更新履歴</summary>
 
 ### 3.1.9
 tweetdeck.com のリダイレクトを修正
@@ -205,4 +223,4 @@ manifest V2 で作り直し外部サーバーを必要としないように変�
 [@katabame](https://twitter.com/katabame)  
 以下の時点の内容を基に翻訳されています。  
 * README: commit [294882a](https://github.com/dimdenGD/OldTweetDeck/commit/294882a3d5de029b2b1158d331c8549c941e34ac)  
-* 更新履歴: release/tag [v3.2.1](https://github.com/dimdenGD/OldTweetDeck/releases/tag/v3.2.1)
+* 更新履歴: release/tag [v3.3.1](https://github.com/dimdenGD/OldTweetDeck/releases/tag/v3.3.1)
