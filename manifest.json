@@ -1,7 +1,7 @@
 {
     "name": "OldTweetDeck",
     "description": "Returns old TweetDeck, cloned by jg-maon",
-    "version": "3.3.2",
+    "version": "3.6.2",
     "manifest_version": 2,
     "homepage_url": "https://github.com/jg-maon/OldTweetDeck",
     "permissions": [
@@ -9,6 +9,8 @@
         "webRequestBlocking",
         "webNavigation",
         "https://twitter.com/*",
+        "https://x.com/*",
+        "https://*.x.com/*",
         "https://tweetdeck.twitter.com/*",
         "https://abs.twimg.com/*",
         "https://api.twitter.com/*",
@@ -18,7 +20,7 @@
     "background": {
         "scripts": ["src/background.js"]
     },
-    "web_accessible_resources": ["images/*", "files/*", "src/*"],
+    "web_accessible_resources": ["images/*", "files/*", "src/*", "solver.html"],
     "icons": {
         "16": "/images/logo16.png",
         "32": "/images/logo32.png",
@@ -27,7 +29,7 @@
     },
     "content_scripts": [
         {
-            "matches": ["https://twitter.com/i/tweetdeck"],
+            "matches": ["https://twitter.com/i/tweetdeck", "https://x.com/i/tweetdeck"],
             "js": ["src/notifications.js", "src/injection.js"],
             "all_frames": true,
             "run_at": "document_start"
