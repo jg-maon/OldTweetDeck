@@ -8,6 +8,10 @@ setTimeout(function () {
     document.getElementsByTagName("head")[0].appendChild(icon);
 }, 3000);
 
+if(location.hostname === 'twitter.com' && location.pathname === '/i/tweetdeck') {
+    location.replace(`https://x.com/i/tweetdeck`)
+}
+
 function expandTweet(e, tweet_id) {
     e.preventDefault();
     e.target.innerText = "Loading...";
@@ -18201,7 +18205,7 @@ document.body.addEventListener("click", function (e) {
         "use strict";
         i.r(t),
             (t.default =
-                '<div class="js-login-error form-message form-error-message error txt-center padding-al margin-bxl {{^message}}is-hidden{{/message}}"> <p class="js-login-error-message">{{message}} More info: <a style="color:lightpink;font-weight:bold" href="https://twitter.com/d1mden" target="_blank">@d1mden</a></p> </div>');
+                '<div class="js-login-error form-message form-error-message error txt-center padding-al margin-bxl {{^message}}is-hidden{{/message}}"> <p class="js-login-error-message">{{message}} More info: <a style="color:lightpink;font-weight:bold" href="https://twitter.com/dimden" target="_blank">@dimden</a></p> </div>');
     },
     function (e, t, i) {
         "use strict";
@@ -32721,7 +32725,12 @@ document.body.addEventListener("click", function (e) {
             var h = {},
                 m = null;
             (h.getDecider = function (e) {
-                var t = "https://tweetdeck.twitter.com/decider?identifier=" + e;
+                var t;
+                if(window.chrome && window.chrome.runtime && window.chrome.runtime.getURL) {
+                    t = `${chrome.runtime.getURL('/files/decider.json')}?identifier=` + e;
+                } else {
+                    t = "https://tweetdeck.twitter.com/decider?identifier=" + e;
+                }
                 return h.drequest(
                     t,
                     {
@@ -32775,7 +32784,7 @@ document.body.addEventListener("click", function (e) {
                         (null === l || (0, c.default)(l)) && (l = h.getReq()),
                         i.request(g, n, l),
                         "/" == n.charAt(0) && (n = TD.config.api_root + n),
-                        !(0, a.default)(n, "http://") && !(0, a.default)(n, "https://"))
+                        !(0, a.default)(n, "http://") && !(0, a.default)(n, "https://") && !(0, a.default)(n, "moz-extension://") && !(0, a.default)(n, "chrome-extension://"))
                     )
                         return t.fail(new Error("Malformed url"));
                     l.headers = (0, r.default)(l.headers || {}, {
@@ -66856,8 +66865,8 @@ document.body.addEventListener("click", function (e) {
         "use strict";
         var n = i(109),
             s = {
-                baseUrl: "https://twitter.com/i/safety/report_story",
-                completeUrl: "https://twitter.com/i/safety/report_story_complete",
+                baseUrl: "https://x.com/i/safety/report_story",
+                completeUrl: "https://x.com/i/safety/report_story_complete",
                 getReportUrl: function (e) {
                     return e.reportedTweetId ? s.getReportTweetUrl(e) : s.getReportUserUrl(e);
                 },

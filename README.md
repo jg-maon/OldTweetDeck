@@ -1,6 +1,13 @@
 ﻿# OldTweetDeck
 
-Returns old TweetDeck, for free!
+Returns old TweetDeck, for free!  
+> [!IMPORTANT]
+> Do not use Search columns unless you have X Premium subscription.  
+> If you do search for something (not recommended), remove the column immediately after you're done.  
+
+> [!NOTE]
+> Since Twitter made likes private, the Likes tab aren't loading anymore.  
+> This can not be fixed since the API to retrieve the likes is gone. Same thing with Activity column.
 
 > If you're interested in getting 2015-2018 Twitter back, you can also check out [OldTwitter](https://github.com/dimdenGD/OldTwitter) extension.
 
@@ -23,7 +30,7 @@ Note: Do not delete the extension files (unzipped archive for Chromium, zip file
 4. Enable developer mode (there should be switch somewhere on that page)
 5. Press "Load unpacked" button
 6. Select folder with unzipped archive
-7. Go to https://twitter.com/i/tweetdeck and enjoy old TweetDeck
+7. Go to https://x.com/i/tweetdeck and enjoy old TweetDeck
 8. [Donate to encourage continued support](https://www.patreon.com/dimdendev)
 
 ### Firefox
@@ -36,7 +43,7 @@ Note: Do not delete the extension files (unzipped archive for Chromium, zip file
 4. Go to addons page(`about:addons`)
 5. Press "Install Add-on From File..." button
 6. Select zip file you downloaded
-7. Go to https://twitter.com/i/tweetdeck and enjoy old TweetDeck
+7. Go to https://x.com/i/tweetdeck and enjoy old TweetDeck
 8. [Donate to encourage continued support](https://www.patreon.com/dimdendev)
 
 #### Stable
@@ -58,7 +65,8 @@ If extension files were updated, you have to reinstall extension to get new upda
 
 ## Better TweetDeck
 
-I've made a fork of BetterTD that works with this extension, you can find it [here](https://github.com/dimdenGD/BetterTweetDeck/). Install it the same way as this extension, except get archive from [Releases](https://github.com/dimdenGD/BetterTweetDeck/releases) page instead of "Code" button.
+I've made a fork of BetterTD that works with this extension, you can find it [here](https://github.com/dimdenGD/BetterTweetDeck/releases).  
+Install it the same way as this extension.
 
 ## FAQ
 
@@ -73,3 +81,7 @@ Ignore this warning.
 #### User or Search column aren't loading for me.
 
 You're getting rate limited. They'll comeback after some time.
+
+#### Likes tab aren't loading for me.
+
+This can not be fixed. Since Twitter made likes private, the API to retrive likes are gone.

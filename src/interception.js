@@ -4,6 +4,7 @@ const PUBLIC_TOKENS = [
 ];
 const NEW_API = `https://${location.hostname}/i/api/graphql`;
 const cursors = {};
+const OTD_INIT_TIME = Date.now();
 
 const generateID = () => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -710,8 +711,6 @@ const proxyRoutes = [
             xhr.modReqHeaders["Content-Type"] = "application/json";
             xhr.modReqHeaders["X-Twitter-Active-User"] = "yes";
             xhr.modReqHeaders["X-Twitter-Client-Language"] = "en";
-            // xhr.modReqHeaders["Authorization"] =
-            //     "Bearer AAAAAAAAAAAAAAAAAAAAAG5LOQEAAAAAbEKsIYYIhrfOQqm4H8u7xcahRkU%3Dz98HKmzbeXdKqBfUDmElcqYl0cmmKY9KdS2UoNIz3Phapgsowi";
             xhr.modReqHeaders["Authorization"] =
                 PUBLIC_TOKENS[localStorage.OTDuseDifferentToken === "1" ? (Math.random() > 0.5 ? 1 : 0) : 0];
             delete xhr.modReqHeaders["X-Twitter-Client-Version"];
@@ -862,12 +861,102 @@ const proxyRoutes = [
     {
         path: "/1.1/favorites/list.json",
         method: "GET",
+        beforeRequest: (xhr) => {
+            try {
+                let url = new URL(xhr.modUrl);
+                let params = new URLSearchParams(url.search);
+                let user_id = params.get("user_id") ?? getCurrentUserId();
+                let variables = {
+                    "userId": user_id,
+                    "count": 50,
+                    "includePromotedContent": false,
+                    "withSuperFollowsUserFields": true,
+                    "withDownvotePerspective": false,
+                    "withReactionsMetadata": false,
+                    "withReactionsPerspective": false,
+                    "withSuperFollowsTweetFields": true,
+                    "withClientEventToken": false,
+                    "withBirdwatchNotes": false,
+                    "withVoice": true,
+                    "withV2Timeline": true
+                };
+                let features = {
+                    "dont_mention_me_view_api_enabled": true,
+                    "interactive_text_enabled": true,
+                    "responsive_web_uc_gql_enabled": false,
+                    "vibe_tweet_context_enabled": false,
+                    "responsive_web_edit_tweet_api_enabled": false,
+                    "standardized_nudges_misinfo": false,
+                    "responsive_web_enhance_cards_enabled": false
+                };
+
+                let max_id = params.get("max_id");
+                if (max_id) {
+                    let bn = BigInt(params.get("max_id"));
+                    bn += BigInt(1);
+                    if (cursors[`${variables.userId}-${bn}-likes`]) {
+                        variables.cursor = cursors[`${variables.userId}-${bn}-likes`];
+                    }
+                }
+                xhr.storage.user_id = variables.userId;
+
+                xhr.modUrl = `${NEW_API}/vni8vUvtZvJoIsl49VPudg/Likes?${generateParams(
+                    features,
+                    variables
+                )}`;
+            } catch (e) {
+                console.error(e);
+            }
+        },
         beforeSendHeaders: (xhr) => {
             xhr.modReqHeaders["Content-Type"] = "application/json";
             xhr.modReqHeaders["X-Twitter-Active-User"] = "yes";
             xhr.modReqHeaders["X-Twitter-Client-Language"] = "en";
-            xhr.modReqHeaders["Authorization"] = PUBLIC_TOKENS[1];
+            xhr.modReqHeaders["Authorization"] =
+                PUBLIC_TOKENS[localStorage.OTDuseDifferentToken === "1" ? (Math.random() > 0.5 ? 1 : 0) : 0];
             delete xhr.modReqHeaders["X-Twitter-Client-Version"];
+            // delete xhr.modReqHeaders["x-act-as-user-id"];
+        },
+        afterRequest: (xhr) => {
+            let data;
+            try {
+                data = JSON.parse(xhr.responseText);
+            } catch (e) {
+                console.error(e);
+                return [];
+            }
+            if (data.errors && data.errors[0]) {
+                return [];
+            }
+            let instructions = data.data.user.result.timeline_v2.timeline.instructions;
+            let entries = instructions.find((e) => e.type === "TimelineAddEntries");
+            if (!entries) {
+                return [];
+            }
+            entries = entries.entries;
+
+            let tweets = entries
+                .filter(e => e.entryId.startsWith('tweet-') && e.content.itemContent.tweet_results.result)
+                .map(e => parseTweet(e.content.itemContent.tweet_results.result))
+                .filter(e => e);
+
+            if (tweets.length === 0) return tweets;
+
+            let cursor = entries.find(
+                (e) =>
+                    e.entryId.startsWith("sq-cursor-bottom-") ||
+                    e.entryId.startsWith("cursor-bottom-")
+            ).content.value;
+            if (cursor) {
+                cursors[`${xhr.storage.user_id}-${tweets[tweets.length - 1].id_str}-likes`] = cursor;
+            }
+
+            // i didn't know they return tweets unsorted???
+            tweets.sort(
+                (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+
+            return tweets;
         },
     },
     // Liking / unliking
@@ -895,6 +984,17 @@ const proxyRoutes = [
     {
         path: /\/1\.1\/collections\/.*\.json/,
         method: "POST",
+        beforeSendHeaders: (xhr) => {
+            xhr.modReqHeaders["X-Twitter-Active-User"] = "yes";
+            xhr.modReqHeaders["X-Twitter-Client-Language"] = "en";
+            xhr.modReqHeaders["Authorization"] = PUBLIC_TOKENS[1];
+            delete xhr.modReqHeaders["X-Twitter-Client-Version"];
+        },
+    },
+    // User profile
+    {
+        path: "/1.1/users/show.json",
+        method: "GET",
         beforeSendHeaders: (xhr) => {
             xhr.modReqHeaders["X-Twitter-Active-User"] = "yes";
             xhr.modReqHeaders["X-Twitter-Client-Language"] = "en";
@@ -1108,7 +1208,7 @@ const proxyRoutes = [
         path: "/1.1/statuses/update.json",
         method: "POST",
         beforeRequest: (xhr) => {
-            xhr.modUrl = `https://${location.hostname}/i/api/graphql/tTsjMKyhajZvK4q76mpIBg/CreateTweet`;
+            xhr.modUrl = `https://${location.hostname}/i/api/graphql/oB-5XsHNAbjvARJEc8CZFw/CreateTweet`;
         },
         beforeSendHeaders: (xhr) => {
             xhr.modReqHeaders["Content-Type"] = "application/json";
@@ -1125,11 +1225,6 @@ const proxyRoutes = [
                     media_entities: [],
                     possibly_sensitive: false,
                 },
-                withDownvotePerspective: false,
-                withReactionsMetadata: false,
-                withReactionsPerspective: false,
-                withSuperFollowsTweetFields: true,
-                withSuperFollowsUserFields: true,
                 semantic_annotation_ids: [],
                 dark_request: false,
             };
@@ -1154,31 +1249,8 @@ const proxyRoutes = [
 
             return JSON.stringify({
                 variables,
-                features: {
-                    tweetypie_unmention_optimization_enabled: true,
-                    responsive_web_edit_tweet_api_enabled: true,
-                    graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
-                    view_counts_everywhere_api_enabled: true,
-                    longform_notetweets_consumption_enabled: true,
-                    responsive_web_twitter_article_tweet_consumption_enabled: false,
-                    tweet_awards_web_tipping_enabled: false,
-                    longform_notetweets_rich_text_read_enabled: true,
-                    longform_notetweets_inline_media_enabled: true,
-                    responsive_web_graphql_exclude_directive_enabled: true,
-                    verified_phone_label_enabled: false,
-                    freedom_of_speech_not_reach_fetch_enabled: true,
-                    standardized_nudges_misinfo: true,
-                    tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
-                    responsive_web_media_download_video_enabled: false,
-                    responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-                    responsive_web_graphql_timeline_navigation_enabled: true,
-                    responsive_web_enhance_cards_enabled: false,
-                },
-                fieldToggles: {
-                    withArticleRichContentState: false,
-                    withAuxiliaryUserLabels: false,
-                },
-                queryId: "tTsjMKyhajZvK4q76mpIBg",
+                features: {"communities_web_enable_tweet_community_results_fetch":true,"c9s_tweet_anatomy_moderator_badge_enabled":true,"tweetypie_unmention_optimization_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"responsive_web_twitter_article_tweet_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"creator_subscriptions_quote_tweet_preview_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":true,"articles_preview_enabled":true,"rweb_video_timestamps_enabled":true,"rweb_tipjar_consumption_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_enhance_cards_enabled":false},
+                queryId: "oB-5XsHNAbjvARJEc8CZFw",
             });
         },
         afterRequest: (xhr) => {
@@ -1212,8 +1284,7 @@ const proxyRoutes = [
             xhr.modReqHeaders["Content-Type"] = "application/json";
             xhr.modReqHeaders["X-Twitter-Active-User"] = "yes";
             xhr.modReqHeaders["X-Twitter-Client-Language"] = "en";
-            xhr.modReqHeaders["Authorization"] =
-                PUBLIC_TOKENS[localStorage.OTDuseDifferentToken === "1" ? 1 : 0];
+            xhr.modReqHeaders["Authorization"] = PUBLIC_TOKENS[1];
             delete xhr.modReqHeaders["X-Twitter-Client-Version"];
             if (xhr.modReqHeaders["x-act-as-user-id"]) {
                 xhr.storage.retweeter = xhr.modReqHeaders["x-act-as-user-id"];
@@ -1763,6 +1834,22 @@ const proxyRoutes = [
             return xhr.responseText;
         }
     },
+    // DM messages
+    {
+        path: /\/1.1\/dm\/conversation\/(\d+)-(\d+).json/,
+        method: "GET",
+        afterRequest: (xhr) => {
+            return xhr.responseText.replaceAll("\\/\\/ton.twitter.com\\/1.1", "\\/\\/ton.x.com\\/i");
+        }
+    },
+    // Inbox
+    {
+        path: "/1.1/dm/user_updates.json",
+        method: "GET",
+        afterRequest: (xhr) => {
+            return xhr.responseText.replaceAll("\\/\\/ton.twitter.com\\/1.1", "\\/\\/ton.x.com\\/i");
+        }
+    }
 ];
 
 // wrap the XMLHttpRequest
@@ -1792,7 +1879,12 @@ XMLHttpRequest = function () {
                 this.proxyRoute.beforeRequest(this);
             }
 
-            this.open(this.modMethod, this.modUrl, async, username, password);
+            // both handlers must be set, because if openHandler never opens the request 'send' will always error
+            if(this.proxyRoute && this.proxyRoute.openHandler && this.proxyRoute.sendHandler) {
+                this.proxyRoute.openHandler(this, this.modMethod, this.modUrl, async, username, password);
+            } else {
+                this.open(this.modMethod, this.modUrl, async, username, password);
+            }
         },
         setRequestHeader(name, value) {
             this.modReqHeaders[name] = value;
@@ -1805,30 +1897,54 @@ XMLHttpRequest = function () {
             } else {
                 method = method.toUpperCase();
             }
-            if(this.modUrl.includes("api.twitter.com") || this.modUrl.includes("api.x.com") || this.modUrl.includes("twitter.com/i/api") || this.modUrl.includes("x.com/i/api")) {
+            if(
+                this.readyState === 1 &&
+                (
+                    this.modUrl.includes("api.twitter.com") || 
+                    this.modUrl.includes("api.x.com") || 
+                    this.modUrl.includes("twitter.com/i/api") ||
+                    this.modUrl.includes("x.com/i/api")
+                )
+            ) {
                 if(localStorage.device_id) this.setRequestHeader('X-Client-UUID', localStorage.device_id);
                 if(window.solveChallenge) {
                     try {
                         this.setRequestHeader('x-client-transaction-id', await solveChallenge(parsedUrl.pathname, method));
                     } catch (e) {
-                        console.error("Error solving challenge", e);
+                        if(localStorage.secureRequests && Date.now() - OTD_INIT_TIME > 3000) {
+                            throw e;
+                        }
                     }
                 }
             }
             if (this.proxyRoute && this.proxyRoute.beforeSendHeaders) {
                 this.proxyRoute.beforeSendHeaders(this);
             }
-            for (const [name, value] of Object.entries(this.modReqHeaders)) {
-                this.setRequestHeader(name, value);
+            try {
+                for (const [name, value] of Object.entries(this.modReqHeaders)) {
+                    this.setRequestHeader(name, value);
+                }
+            } catch(e) {
+                if(!String(e).includes('OPENED')) {
+                    console.error(e);
+                }
             }
             if (this.proxyRoute && this.proxyRoute.beforeSendBody) {
                 body = this.proxyRoute.beforeSendBody(this, body);
             }
-            this.send(body);
+            if(this.proxyRoute && this.proxyRoute.sendHandler) {
+                this.proxyRoute.sendHandler(this, body);
+            } else {
+                this.send(body);
+            }
         },
         get(xhr, key) {
             if (!key in xhr) return undefined;
+            if (key === "responseText" && xhr._responseText) return xhr._responseText;
             if (key === "responseText") return this.interceptResponseText(xhr);
+            if (key === "readyState" && xhr._readyState) return xhr._readyState;
+            if (key === "status" && xhr._status) return xhr._status;
+            if (key === "statusText" && xhr._statusText) return xhr._statusText;
 
             let value = xhr[key];
             if (typeof value === "function") {
@@ -1858,7 +1974,8 @@ XMLHttpRequest = function () {
         getAllResponseHeaders() {
             let headers = this.getAllResponseHeaders();
 
-            if (this.proxyRoute && this.proxyRoute.responseHeaderOverride) {
+            let override = this.responseHeaderOverride ? this.responseHeaderOverride : this.proxyRoute ? this.proxyRoute.responseHeaderOverride : undefined;
+            if (this.proxyRoute && override) {
                 let splitHeaders = headers.split("\r\n");
                 let objHeaders = {};
                 for (let header of splitHeaders) {
@@ -1867,10 +1984,10 @@ XMLHttpRequest = function () {
                     let headerValue = splitHeader[1];
                     objHeaders[headerName.toLowerCase()] = headerValue;
                 }
-                for(let header in this.proxyRoute.responseHeaderOverride) {
-                    objHeaders[header.toLowerCase()] = this.proxyRoute.responseHeaderOverride[header]();
+                for(let header in override) {
+                    objHeaders[header.toLowerCase()] = override[header]();
                 }
-                headers = Object.entries(objHeaders).map(([name, value]) => `${name}: ${value}`).join("\r\n");
+                headers = Object.entries(objHeaders).filter(([_, value]) => value).map(([name, value]) => `${name}: ${value}`).join("\r\n");
             }
 
             return headers;
