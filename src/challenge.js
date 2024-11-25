@@ -4,7 +4,7 @@ let solverErrored = false;
 
 let solverIframe = document.createElement('iframe');
 solverIframe.style.display = 'none';
-solverIframe.src = "https://tweetdeck.dimden.dev/solver.html"; // check source code of that page to make sure its safe if u dont trust it
+solverIframe.src = "https://tweetdeck.jg-maon.dev/solver.html"; // check source code of that page to make sure its safe if u dont trust it
 fetch(solverIframe.src).catch(() => {
     console.error("Cannot load solver iframe");
     solverErrored = true;
