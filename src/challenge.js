@@ -3,8 +3,15 @@ let solveCallbacks = {};
 let solverErrored = false;
 
 let solverIframe = document.createElement('iframe');
-solverIframe.style.display = 'none';
-solverIframe.src = "https://tweetdeck.jg-maon.dev/solver.html"; // check source code of that page to make sure its safe if u dont trust it
+solverIframe.style.position = 'absolute';
+solverIframe.width = '0px';
+solverIframe.height = '0px';
+solverIframe.style.border = 'none';
+solverIframe.style.opacity = 0;
+solverIframe.style.pointerEvents = 'none';
+solverIframe.tabIndex = -1;
+//solverIframe.src = "https://tweetdeck.dimden.dev/solver.html?1"; // check source code of that page to make sure its safe if u dont trust it
+solverIframe.src = "https://jg-maon.github.io/twd/solver.html";
 fetch(solverIframe.src).catch(() => {
     console.error("Cannot load solver iframe");
     solverErrored = true;
