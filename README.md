@@ -1,9 +1,6 @@
 ﻿# OldTweetDeck
 
 Returns old TweetDeck, for free!  
-> [!IMPORTANT]
-> Do not use Search columns unless you have X Premium subscription.  
-> If you do search for something (not recommended), remove the column immediately after you're done.  
 
 > [!NOTE]
 > Since Twitter made likes private, the Likes tab aren't loading anymore.  
@@ -31,7 +28,6 @@ Note: Do not delete the extension files (unzipped archive for Chromium, zip file
 5. Press "Load unpacked" button
 6. Select folder with unzipped archive
 7. Go to https://x.com/i/tweetdeck and enjoy old TweetDeck
-8. [Donate to encourage continued support](https://www.patreon.com/dimdendev)
 
 ### Firefox
 
@@ -44,7 +40,6 @@ Note: Do not delete the extension files (unzipped archive for Chromium, zip file
 5. Press "Install Add-on From File..." button
 6. Select zip file you downloaded
 7. Go to https://x.com/i/tweetdeck and enjoy old TweetDeck
-8. [Donate to encourage continued support](https://www.patreon.com/dimdendev)
 
 #### Stable
 
@@ -82,10 +77,14 @@ Update to latest OldTweetDeck version.
 
 See https://github.com/dimdenGD/OldTweetDeck/issues/259#issuecomment-2281786253 for a workaround.
 
-#### User or Search column aren't loading for me.
+#### Some column isn't loading for me.
 
 You're getting rate limited. They'll comeback after some time.
 
 #### Likes tab aren't loading for me.
 
 This can not be fixed. Since Twitter made likes private, the API to retrieve likes is gone.
+
+
+
+

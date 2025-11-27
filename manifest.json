@@ -1,14 +1,18 @@
 {
     "name": "OldTweetDeck",
     "description": "Returns old TweetDeck, cloned by jg-maon",
-    "version": "4.1.0",
+    "version": "4.3.7",
     "manifest_version": 3,
     "homepage_url": "https://github.com/jg-maon/OldTweetDeck",
     "permissions": [
         "webNavigation",
         "cookies",
-        "declarativeNetRequest"
+        "declarativeNetRequest",
+        "storage"
     ],
+    "background": {
+        "service_worker": "src/background3.js"
+    },
     "host_permissions": [
         "https://twitter.com/*",
         "https://*.twitter.com/*",
@@ -16,7 +20,8 @@
         "https://*.x.com/*",
         "https://abs.twimg.com/*",
         "https://api.twitter.com/*",
-        "https://tweetdeck.com/"
+        "https://tweetdeck.com/",
+        "https://oldtd.org/*"
     ],
     "web_accessible_resources": [
         {

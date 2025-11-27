@@ -26,26 +26,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 )
 
 chrome.webRequest.onBeforeRequest.addListener(
-    function(details) {
-        try {
-            let parsedUrl = new URL(details.url);
-            let path = parsedUrl.pathname;
-            if(path === '/decider') {
-                return {
-                    redirectUrl: chrome.runtime.getURL('/files/decider.json')
-                }
-            } else if(path === '/web/dist/version.json') {
-                return {
-                    redirectUrl: chrome.runtime.getURL('/files/version.json')
-                }
-            };
-        } catch(e) {}
-    },
-    {urls: ["https://*.twitter.com/*", "https://*.x.com/*"]},
-    ["blocking"]
-);
-
-chrome.webRequest.onBeforeRequest.addListener(
     function() {
         return {
             redirectUrl: 'https://twitter.com/i/tweetdeck'
@@ -111,7 +91,8 @@ chrome.webRequest.onBeforeRequest.addListener(
                     path.startsWith("/responsive-web/client-web/")
                 ) &&
                 (requestFrom === "https://twitter.com/i/tweetdeck" || requestFrom === "https://x.com/i/tweetdeck") &&
-                !path.includes('ondemand.s.')
+                !path.includes('ondemand.s.') &&
+                !path.includes('vendor.')
             ) {
                 return {
                     cancel: true,
@@ -123,7 +104,7 @@ chrome.webRequest.onBeforeRequest.addListener(
     ["blocking"],
 );
 
-chrome.runtime.onMessage.addListener(async (request, sender) => {
+chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     if(request.action === 'setcookie') {
         chrome.cookies.getAll({url: "https://x.com"}, async cookies => {
             console.log('setcookie', cookies);
@@ -151,5 +132,11 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
                 });
             });
         });
+    } else if(request.action === 'getcookie') {
+        chrome.cookies.getAll({url: "https://x.com"}, async cookies => {
+            console.log('getcookie', cookies);
+            sendResponse(cookies);
+        });
+        return true;
     }
 });

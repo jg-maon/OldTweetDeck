@@ -1,9 +1,8 @@
 ﻿# OldTweetDeck
 昔のTweetDeckを取り戻しましょう！無料で！
 
-> [!IMPORTANT]
-> Xプレミアムのサブスクリプションを持っていない限り、検索カラムを使わないでください。  
-> もし何かしらの理由で検索カラムを使う場合(おすすめしません)は、検索し終わった後すぐにカラムを削除してください。
+> [!WARNING]
+> Xプレミアムに登録していない場合、現在この拡張機能を利用することでアカウントが凍結される危険性があります。
 
 > [!NOTE]
 > Twitterがいいねを非公開にしたため、いいねタブは読み込まれなくなりました。  
@@ -30,7 +29,6 @@
 5. "パッケージ化されていない拡張機能を読み込む"をクリックする
 6. Zipファイルを展開したフォルダを選択する
 7. https://x.com/i/tweetdeck にアクセスして昔のTweetDeckを楽しむ
-8. [開発が継続できるように支援する](https://www.patreon.com/dimdendev)
 
 ### Firefox
 
@@ -43,7 +41,6 @@
 5. アドオンページ右上の歯車アイコン→"ファイルからアドオンをインストール..."をクリックする
 6. ダウンロードしたZipファイルを選択する
 7. https://x.com/i/tweetdeck にアクセスして昔のTweetDeckを楽しむ
-8. [開発が継続できるように支援する](https://www.patreon.com/dimdendev)
 
 #### Stable
 
@@ -91,6 +88,42 @@ Twitterがいいねを非公開にしたことに伴い、いいねを取得す�
 
 ## 更新履歴
 
+### 4.3.5
+* より安全なOldTweetDeck: よりステルスなリクエスト, セキュリティーヘッダーの強制, より少ないAPIコール
+* スケジュールカラムを修正
+* 永遠にページが読み込まれる問題を修正
+
+**[寄付する](https://patreon.com/OldTweetDeck)**
+
+### 4.3.4
+* アカウントが凍結される原因を恐らく修正しました (Xプレミアムに登録されていない場合は自己責任でご利用ください)
+
+### 4.3.3
+* OldTweetDeckが読み込まれない問題を修正
+
+### 4.3.2
+* セキュリティーヘッダージェネレーターを修正しました (検索カラムが修正され、より安全になるはずです)
+
+### 4.3.1
+* トレンドカラムを修正しました
+
+### 4.3.0
+* ブックマークカラムを追加しました！
+<img width="334" height="318" alt="image" src="https://github.com/user-attachments/assets/2dcb5fe2-c9c9-41d4-b57a-4cc64a0adab8" />
+<img width="443" height="496" alt="image" src="https://github.com/user-attachments/assets/d7d8f7aa-7aa0-44ff-930c-e73d57ae7516" />
+
+* また、リツイートがブックマーク出来ない問題を修正しました
+
+### 4.2.0
+* リストやユーザーカラムが表示できない問題を修正 (プライベートサポートバージョン)
+   * 4.2.0に更新後、設定からPatreonをリンクするとPatreonサポーター限定機能が利用できます
+
+### 4.1.0
+* リストが表示できない問題を修正 (遅いバージョン)
+
+<details>
+<summary>過去の更新履歴</summary>
+
 ### 4.0.7
 * ツイートが翻訳できない問題を修正
 * 検索カラムとユーザーカラムの安定性を少し向上
@@ -119,12 +152,6 @@ OldTweetDeckはずっとManifest V2を使用していたため、Manifest V3を�
 これにより、Manifest V2の廃止後も引き続き拡張機能が動作するはずです。  
 この変更は少し試験的なものであるため、バグなどを発見した場合はご報告ください。  
 また、`OldTweetDeck v3.6.8`も現状まだ使える状態ですので、もし`v4.x`が動かない場合は引き続き`v3.6.8`をご利用いただけます。
-
-**開発者はウクライナ在住で、かなりひどい状況にあります。可能であれば[寄付](https://dimden.dev/donate/)をお願いいたします。**  
-**いつもご支援いただきありがとうございます。**
-
-<details>
-<summary>過去の更新履歴</summary>
 
 ### 3.6.8
 * リツイートができない問題を修正
@@ -319,5 +346,6 @@ manifest V2 で作り直し外部サーバーを必要としないように変�
 ## 日本語翻訳
 [@katabame](https://twitter.com/katabame)  
 以下の時点の内容を基に翻訳されています。  
-* README: commit [fd974f4](https://github.com/dimdenGD/OldTweetDeck/commit/fd974f4716e0d271ca3719ff71e342ca84fb9b98)  
-* 更新履歴: release/tag [v4.0.4](https://github.com/dimdenGD/OldTweetDeck/releases/tag/v4.0.4)
+* README: commit [302b9ee](https://github.com/dimdenGD/OldTweetDeck/commit/302b9ee83ecbdefc589a23888aff051f9bfab75a)  
+* 更新履歴: release/tag [v4.3.5](https://github.com/dimdenGD/OldTweetDeck/releases/tag/v4.3.5)
+
