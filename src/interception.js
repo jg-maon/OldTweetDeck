@@ -403,60 +403,62 @@ function parseTweet(res) {
                 }
                 result = result.tweet;
             }
-            tweet.quoted_status = result.legacy;
-            tweet.quoted_status.id = +tweet.quoted_status.id_str;
-            tweet.quoted_status.conversation_id = +tweet.quoted_status.conversation_id_str;
-            tweet.quoted_status.text = tweet.quoted_status.full_text;
-            if (tweet.quoted_status) {
-                tweet.quoted_status.user = result.core.user_results.result.legacy;
-                if (!tweet.quoted_status.user) {
-                    delete tweet.quoted_status;
+            if(result && result.legacy) {
+                tweet.quoted_status = result.legacy;
+                tweet.quoted_status.id = +tweet.quoted_status.id_str;
+                tweet.quoted_status.conversation_id = +tweet.quoted_status.conversation_id_str;
+                tweet.quoted_status.text = tweet.quoted_status.full_text;
+                if (tweet.quoted_status) {
+                    tweet.quoted_status.user = result.core.user_results.result.legacy;
+                    if (!tweet.quoted_status.user) {
+                        delete tweet.quoted_status;
+                    } else {
+                        tweet.quoted_status.user.id_str = tweet.quoted_status.user_id_str;
+                        tweet.quoted_status.user.id = +tweet.quoted_status.user_id_str;
+                        let user_result = result?.core?.user_results?.result;
+                        if(!tweet.quoted_status.user.profile_image_url && user_result?.avatar?.image_url) {
+                            tweet.quoted_status.user.profile_image_url = user_result.avatar.image_url;
+                            tweet.quoted_status.user.profile_image_url_https = tweet.quoted_status.user.profile_image_url.replace("http://", "https://");
+                        }
+                        if(!tweet.quoted_status.user.profile_image_url && tweet.quoted_status.user.profile_image_url_https) {
+                            tweet.quoted_status.user.profile_image_url = tweet.quoted_status.user.profile_image_url_https.replace("https://", "http://");
+                        }
+                        if(!tweet.quoted_status.user.name && user_result?.core?.name) {
+                            tweet.quoted_status.user.name = user_result.core.name;
+                        }
+                        if(!tweet.quoted_status.user.screen_name && user_result?.core?.screen_name) {
+                            tweet.quoted_status.user.screen_name = user_result.core.screen_name;
+                        }
+                        if(!tweet.quoted_status.user.created_at && user_result?.core?.created_at) {
+                            tweet.quoted_status.user.created_at = user_result.core.created_at;
+                        }
+                        if(user_result?.relationship_perspectives?.muting) {
+                            tweet.quoted_status.user.muting = true;
+                        }
+                        if(user_result?.relationship_perspectives?.blocking) {
+                            tweet.quoted_status.user.blocking = true;
+                        }
+                        if(user_result?.privacy?.protected) {
+                            tweet.quoted_status.user.protected = true;
+                        }
+                        if(user_result?.location?.location) {
+                            tweet.quoted_status.user.location = user_result.location.location;
+                        }
+                        if(user_result?.verification?.verified) {
+                            tweet.quoted_status.user.verified = true;
+                        }
+                        if (user_result.is_blue_verified) {
+                            tweet.quoted_status.user.verified = true;
+                            tweet.quoted_status.user.verified_type = "Blue";
+                        }
+                        tweet.quoted_status.ext = {};
+                        if (result.views) {
+                            tweet.quoted_status.ext.views = { r: { ok: { count: +result.views.count } } };
+                        }
+                    }
                 } else {
-                    tweet.quoted_status.user.id_str = tweet.quoted_status.user_id_str;
-                    tweet.quoted_status.user.id = +tweet.quoted_status.user_id_str;
-                    let user_result = result?.core?.user_results?.result;
-                    if(!tweet.quoted_status.user.profile_image_url && user_result?.avatar?.image_url) {
-                        tweet.quoted_status.user.profile_image_url = user_result.avatar.image_url;
-                        tweet.quoted_status.user.profile_image_url_https = tweet.quoted_status.user.profile_image_url.replace("http://", "https://");
-                    }
-                    if(!tweet.quoted_status.user.profile_image_url && tweet.quoted_status.user.profile_image_url_https) {
-                        tweet.quoted_status.user.profile_image_url = tweet.quoted_status.user.profile_image_url_https.replace("https://", "http://");
-                    }
-                    if(!tweet.quoted_status.user.name && user_result?.core?.name) {
-                        tweet.quoted_status.user.name = user_result.core.name;
-                    }
-                    if(!tweet.quoted_status.user.screen_name && user_result?.core?.screen_name) {
-                        tweet.quoted_status.user.screen_name = user_result.core.screen_name;
-                    }
-                    if(!tweet.quoted_status.user.created_at && user_result?.core?.created_at) {
-                        tweet.quoted_status.user.created_at = user_result.core.created_at;
-                    }
-                    if(user_result?.relationship_perspectives?.muting) {
-                        tweet.quoted_status.user.muting = true;
-                    }
-                    if(user_result?.relationship_perspectives?.blocking) {
-                        tweet.quoted_status.user.blocking = true;
-                    }
-                    if(user_result?.privacy?.protected) {
-                        tweet.quoted_status.user.protected = true;
-                    }
-                    if(user_result?.location?.location) {
-                        tweet.quoted_status.user.location = user_result.location.location;
-                    }
-                    if(user_result?.verification?.verified) {
-                        tweet.quoted_status.user.verified = true;
-                    }
-                    if (user_result.is_blue_verified) {
-                        tweet.quoted_status.user.verified = true;
-                        tweet.quoted_status.user.verified_type = "Blue";
-                    }
-                    tweet.quoted_status.ext = {};
-                    if (result.views) {
-                        tweet.quoted_status.ext.views = { r: { ok: { count: +result.views.count } } };
-                    }
+                    console.warn("No quoted status", result);
                 }
-            } else {
-                console.warn("No quoted status", result);
             }
         }
         if (res.card && res.card.legacy) {
@@ -697,6 +699,9 @@ const proxyRoutes = [
                 let max_id = params.get("max_id");
                 let since_id = params.get("since_id");
                 let user_id = xhr.modReqHeaders["x-act-as-user-id"] ?? params.get("user_id") ?? getCurrentUserId();
+                if(params.get("user_id")) {
+                    xhr.storage.user_id = params.get("user_id");
+                }
                 if (max_id) {
                     let bn = BigInt(params.get("max_id"));
                     bn += BigInt(1);
@@ -710,6 +715,7 @@ const proxyRoutes = [
                     if (cursors[`home-${user_id}-${bn}-top`]) {
                         variables.cursor = cursors[`home-${user_id}-${bn}-top`];
                         xhr.storage.cursor = true;
+                        xhr.storage.since_id = since_id;
                     }
                 }
                 xhr.modUrl = `${NEW_API}/cWF3cqWadLlIXA6KJWhcew/HomeLatestTimeline?${generateParams(
@@ -721,7 +727,7 @@ const proxyRoutes = [
             }
         },
         openHandler: (xhr, method, url, async, username, password) => {
-            const user_id = xhr.modReqHeaders["x-act-as-user-id"] ?? getCurrentUserId();
+            let user_id = xhr.modReqHeaders["x-act-as-user-id"] ?? xhr.storage.user_id ?? getCurrentUserId();
             xhr.storage.user_id = user_id;
             if(!timings.home[user_id]) {
                 timings.home[user_id] = 0;
@@ -752,6 +758,9 @@ const proxyRoutes = [
         afterRequest: (xhr) => {
             if(xhr.storage.cancelled) {
                 return [];
+            }
+            if(xhr.storage.data) {
+                return xhr.storage.data;
             }
             let data;
             try {
@@ -825,11 +834,11 @@ const proxyRoutes = [
                     if(!seenHomeTweets[xhr.storage.user_id]) {
                         seenHomeTweets[xhr.storage.user_id] = [];
                     }
-                    // if any of the tweets are already in the seenHomeTweets, don't push them
-                    if(pushTweets.some(tweet => seenHomeTweets[xhr.storage.user_id].includes(tweet.id_str))) {
-                        continue;
+                    for(let tweet of pushTweets) {
+                        if(xhr.storage.since_id && seenHomeTweets[xhr.storage.user_id].includes(tweet.id_str)) continue;
+                        seenHomeTweets[xhr.storage.user_id].push(tweet.id_str);
+                        tweets.push(tweet);
                     }
-                    tweets.push(...pushTweets);
                 }
             }
 
@@ -865,6 +874,8 @@ const proxyRoutes = [
                 if(tweets[0]) cursors[`home-${xhr.storage.user_id}-${tweets[0].id_str}-top`] = topCursor;
                 if(tweets[1]) cursors[`home-${xhr.storage.user_id}-${tweets[1].id_str}-top`] = topCursor;
             }
+
+            xhr.storage.data = tweets;
 
             return tweets;
         },
@@ -1352,14 +1363,21 @@ const proxyRoutes = [
                         const notif = item.content.notification;
 
                         switch(type) {
-                            case "users_retweeted_your_tweet": 
+                            case "users_retweeted_your_retweet":
+                            case "users_retweeted_your_tweet":
+                            case "user_liked_multiple_tweets": 
+                            case "users_liked_your_retweet":
                             case "users_liked_your_tweet": {
                                 let i = 0;
+                                if(type === 'users_liked_your_retweet') {
+                                    notif.targetTweets = notif.targetTweets.slice(0, 1);
+                                }
                                 for(const userId of notif.fromUsers) {
+                                    if(userId === xhr.storage.user_id) continue;
                                     for(const tweetId of notif.targetTweets) {
                                         const tweet = go.tweets[tweetId];
                                         const user = go.users[userId];
-                                        const action = type === "users_retweeted_your_tweet" ? "retweet" : "favorite";
+                                        const action = type === "users_retweeted_your_tweet" || type === "users_retweeted_your_retweet" ? "retweet" : "favorite";
                                         if(!tweet || !user) continue;
                                         const id = `${tweetId}-${userId}-${action}`;
                                         if(seenNotifications.includes(id)) continue;
@@ -1422,6 +1440,7 @@ const proxyRoutes = [
                                 });
                                 break;
                             }
+                            case "follow_from_recommended_user":
                             case "users_followed_you": {
                                 for(const userId of notif.fromUsers) {
                                     const user = go.users[userId];
@@ -1442,9 +1461,11 @@ const proxyRoutes = [
                                         targets_size: 1
                                     });
                                 }
+                                break;
                             }
                             case "generic_login_notification":
                             case "generic_acid_notification":
+                            case "generic_safety_label_added":
                                 break;
                             default:
                                 console.warn(`Unknown notification type: ${type}`);
@@ -1484,6 +1505,7 @@ const proxyRoutes = [
             const since_id = params.get("since_id");
             const max_id = params.get("max_id");
             const user_id = xhr.modReqHeaders["x-act-as-user-id"] ?? params.get("user_id") ?? getCurrentUserId();
+            xhr.storage.user_id = user_id;
             let cursor;
             if(since_id && cursors[`mentions-${user_id}-top`]) {
                 cursor = cursors[`mentions-${user_id}-top`];
@@ -1548,6 +1570,7 @@ const proxyRoutes = [
                 if(cursorBottom) {
                     cursors[`mentions-${xhr.storage.user_id}-bottom`] = cursorBottom;
                 }
+                
                 return tweets;
             } catch (e) {
                 console.error(`Error parsing mentions`, e);
@@ -2428,42 +2451,60 @@ const proxyRoutes = [
         path: "/1.1/account/verify_credentials.json",
         method: "GET",
         beforeRequest: (xhr) => {
-            xhr.modUrl = `https://x.com/home/`;
+            // xhr.modUrl = `https://x.com/home/`;
         },
         beforeSendHeaders: (xhr) => {
-            delete xhr.modReqHeaders["Content-Type"];
-            delete xhr.modReqHeaders["X-Twitter-Active-User"];
-            delete xhr.modReqHeaders["X-Twitter-Client-Language"];
-            delete xhr.modReqHeaders["X-Twitter-Auth-Type"];
-            delete xhr.modReqHeaders["Authorization"];
+            // delete xhr.modReqHeaders["Content-Type"];
+            // delete xhr.modReqHeaders["X-Twitter-Active-User"];
+            // delete xhr.modReqHeaders["X-Twitter-Client-Language"];
+            // delete xhr.modReqHeaders["X-Twitter-Auth-Type"];
+            // delete xhr.modReqHeaders["Authorization"];
+            // delete xhr.modReqHeaders["X-Csrf-Token"];
+            xhr.storage.user_id = xhr.modReqHeaders["x-act-as-user-id"];
+            xhr.modReqHeaders["Content-Type"] = "application/json";
+            xhr.modReqHeaders["X-Twitter-Active-User"] = "yes";
+            xhr.modReqHeaders["X-Twitter-Client-Language"] = "en";
+            xhr.modReqHeaders["Authorization"] =
+                PUBLIC_TOKENS[0];
             delete xhr.modReqHeaders["X-Twitter-Client-Version"];
-            delete xhr.modReqHeaders["X-Csrf-Token"];
 
         },
         afterRequest: (xhr) => {
+            const data = JSON.parse(xhr.responseText);
             try {
-                const state = extractAssignedJSON(xhr.responseText);
-                const user_id = state.session.user_id;
-                const user = state.entities.users.entities[user_id];
-                if(!user) {
-                    console.error(`User not found: ${JSON.stringify(state)}`);
-                    if(localStorage.OTDverifiedUser) {
-                        try {
-                            verifiedUser = JSON.parse(localStorage.OTDverifiedUser);
-                            console.warn("Using verified user from localStorage");
-                            return verifiedUser;
-                        } catch (e) {}
-                    }
-                    throw new Error('User not found');
-                }
-                verifiedUser = user;
-                localStorage.OTDverifiedUser = JSON.stringify(user);
-                return user;
+                if(!xhr.storage.user_id && !data.errors) {
+                    localStorage.OTDverifiedUser = JSON.stringify(data);
+                    verifiedUser = data;
+                } 
             } catch (e) {
-                console.error(`Failed to get user data`, e);
-                return null;
+                console.error('error parsing verified user', e);
             }
-        }
+            return data;
+        },
+        // afterRequest: (xhr) => {
+        //     try {
+        //         const state = extractAssignedJSON(xhr.responseText);
+        //         const user_id = state.session.user_id;
+        //         const user = state.entities.users.entities[user_id];
+        //         if(!user) {
+        //             console.error(`User not found: ${JSON.stringify(state)}`);
+        //             if(localStorage.OTDverifiedUser) {
+        //                 try {
+        //                     verifiedUser = JSON.parse(localStorage.OTDverifiedUser);
+        //                     console.warn("Using verified user from localStorage");
+        //                     return verifiedUser;
+        //                 } catch (e) {}
+        //             }
+        //             throw new Error('User not found');
+        //         }
+        //         verifiedUser = user;
+        //         localStorage.OTDverifiedUser = JSON.stringify(user);
+        //         return user;
+        //     } catch (e) {
+        //         console.error(`Failed to get user data`, e);
+        //         return null;
+        //     }
+        // }
     },
     // DM messages
     {
